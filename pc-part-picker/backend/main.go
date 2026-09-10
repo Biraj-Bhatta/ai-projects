@@ -36,6 +36,8 @@ type Component struct {
 	WorkloadScoreProgramming int     `json:"workload_score_programming"`
 	WorkloadScoreGeneral     int     `json:"workload_score_general"`
 	Price                    float64 `json:"price"` // Live scraped price
+	URL                      string  `json:"url"` // Link to buy
+	Seller                   string  `json:"seller"`
 }
 
 type BuildRequest struct {
@@ -55,6 +57,7 @@ type ScraperResponse struct {
 	Currency  string  `json:"currency"`
 	InCountry bool    `json:"in_country"`
 	Source    string  `json:"source"`
+	URL       string  `json:"url"`
 }
 
 var db *sql.DB
@@ -130,25 +133,25 @@ func getComponents(c echo.Context) error {
 
 var fetchPriceFunc = fetchPriceFromScraper // Allows mocking in tests
 
-func fetchPriceFromScraper(componentName string, inCountry bool) (float64, error) {
+func fetchPriceFromScraper(componentName string, inCountry bool) (ScraperResponse, error) {
 	apiURL := fmt.Sprintf("http://localhost:8000/scrape?query=%s&in_country=%t", url.QueryEscape(componentName), inCountry)
+	var sResp ScraperResponse
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return 0, err
+		return sResp, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return 0, err
+		return sResp, err
 	}
 
-	var sResp ScraperResponse
 	if err := json.Unmarshal(body, &sResp); err != nil {
-		return 0, err
+		return sResp, err
 	}
 
-	return sResp.Price, nil
+	return sResp, nil
 }
 
 func generateBuild(c echo.Context) error {
@@ -180,10 +183,12 @@ func generateBuild(c echo.Context) error {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			price, err := fetchPriceFunc(allComponents[i].Name, req.InCountry)
+			sResp, err := fetchPriceFunc(allComponents[i].Name, req.InCountry)
 			if err == nil {
 				mu.Lock()
-				allComponents[i].Price = price
+				allComponents[i].Price = sResp.Price
+				allComponents[i].URL = sResp.URL
+				allComponents[i].Seller = sResp.Source
 				mu.Unlock()
 			}
 		}(i)
@@ -204,10 +209,10 @@ func generateBuild(c echo.Context) error {
 		}
 	}
 
-	// Requirement Types to satisfy
-	requiredTypes := []string{"CPU", "Motherboard", "GPU", "PSU"} // Simplified
+	// Requirement Types to satisfy for a complete PC build
+	requiredTypes := []string{"CPU", "Motherboard", "GPU", "RAM", "Storage", "Case", "Cooler", "PSU"}
 	if req.PreferencesGPU == "igpu" {
-		requiredTypes = []string{"CPU", "Motherboard", "PSU"}
+		requiredTypes = []string{"CPU", "Motherboard", "RAM", "Storage", "Case", "Cooler", "PSU"}
 	}
 
 	currentSocket := ""

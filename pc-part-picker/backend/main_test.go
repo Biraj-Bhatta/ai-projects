@@ -14,11 +14,11 @@ import "os"
 // A simple test ensuring the endpoint handles locking and returns correct data.
 func TestGenerateBuildAPI(t *testing.T) {
 	// Mock the external scraper API call
-	fetchPriceFunc = func(componentName string, inCountry bool) (float64, error) {
+	fetchPriceFunc = func(componentName string, inCountry bool) (ScraperResponse, error) {
 		if !inCountry {
-			return 120.0, nil
+			return ScraperResponse{Price: 120.0, URL: "mock.url", Source: "mock seller"}, nil
 		}
-		return 100.0, nil
+		return ScraperResponse{Price: 100.0, URL: "mock.url", Source: "mock seller"}, nil
 	}
 
 	// Need to initialize db connection for testing
@@ -89,11 +89,11 @@ func TestGenerateBuildAPI(t *testing.T) {
 
 func TestGenerateBuildAPI_CrossBorder(t *testing.T) {
 	// Mock the external scraper API call
-	fetchPriceFunc = func(componentName string, inCountry bool) (float64, error) {
+	fetchPriceFunc = func(componentName string, inCountry bool) (ScraperResponse, error) {
 		if !inCountry {
-			return 120.0, nil
+			return ScraperResponse{Price: 120.0, URL: "mock.url", Source: "mock seller"}, nil
 		}
-		return 100.0, nil
+		return ScraperResponse{Price: 100.0, URL: "mock.url", Source: "mock seller"}, nil
 	}
 
 	os.Setenv("DB_USER", "root")

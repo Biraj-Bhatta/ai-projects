@@ -7,6 +7,8 @@ type Component = {
   name: string;
   type: string;
   price: number;
+  url: string;
+  seller: string;
 };
 
 export default function Home() {
@@ -16,7 +18,7 @@ export default function Home() {
   const [gpuPref, setGpuPref] = useState("discrete");
   const [coolingPref, setCoolingPref] = useState("air");
   const [inCountry, setInCountry] = useState(true);
-  const [budget, setBudget] = useState(1000);
+  const [budget, setBudget] = useState(150000); // Set reasonable NRS budget
 
   const [components, setComponents] = useState<Component[]>([]);
   const [lockedComponents, setLockedComponents] = useState<number[]>([]);
@@ -118,7 +120,7 @@ export default function Home() {
           </div>
 
           <div className="mb-4">
-            <label className="block mb-1">Budget ($)</label>
+            <label className="block mb-1">Budget (NRS)</label>
             <input type="number" className="w-full p-2 border rounded" value={budget} onChange={(e) => setBudget(Number(e.target.value))} />
           </div>
 
@@ -163,19 +165,30 @@ export default function Home() {
             <div>
               <div className="space-y-4 mb-6">
                 {buildResult.build.map((part, idx) => (
-                  <div key={idx} className="bg-white p-4 rounded shadow flex justify-between items-center">
-                    <div>
+                  <div key={idx} className="bg-white p-4 rounded shadow flex justify-between items-center flex-wrap gap-4">
+                    <div className="flex-1">
                       <div className="text-sm text-gray-500 font-bold">{part.type}</div>
                       <div className="font-semibold">{part.name}</div>
+                      <div className="text-xs text-gray-400 mt-1">Seller: {part.seller}</div>
                     </div>
-                    <div className="text-green-600 font-bold">
-                      ${part.price.toFixed(2)}
+                    <div className="text-right">
+                      <div className="text-green-600 font-bold text-lg">
+                        NRS {part.price.toFixed(2)}
+                      </div>
+                      <a
+                        href={part.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block mt-2 text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200"
+                      >
+                        Buy / View
+                      </a>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="text-right text-2xl font-bold border-t pt-4">
-                Total: ${buildResult.total_cost.toFixed(2)}
+                Total: NRS {buildResult.total_cost.toFixed(2)}
               </div>
             </div>
           ) : (

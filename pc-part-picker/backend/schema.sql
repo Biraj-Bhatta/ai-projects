@@ -43,4 +43,8 @@ INSERT INTO Components (name, type, brand, model, socket, tier, workload_score_g
 ('Intel Core i5-13400F', 'CPU', 'Intel', 'Core i5-13400F', 'LGA1700', 'B', 75, 75, 75, 85, 65),
 ('ASUS TUF GAMING B650-PLUS', 'Motherboard', 'ASUS', 'B650-PLUS', 'AM5', 'A', 80, 80, 80, 80, 0),
 ('NVIDIA RTX 4060', 'GPU', 'NVIDIA', 'RTX 4060', NULL, 'B', 85, 70, 60, 90, 115),
-('Corsair RM750e', 'PSU', 'Corsair', 'RM750e', NULL, 'S', 90, 90, 90, 90, 750);
+('Corsair RM750e', 'PSU', 'Corsair', 'RM750e', NULL, 'S', 90, 90, 90, 90, 750),
+('Corsair Vengeance 32GB DDR5', 'RAM', 'Corsair', 'Vengeance', NULL, 'A', 85, 90, 85, 80, 5),
+('Samsung 980 PRO 1TB', 'Storage', 'Samsung', '980 PRO', NULL, 'S', 90, 95, 90, 90, 5),
+('NZXT H5 Flow', 'Case', 'NZXT', 'H5 Flow', NULL, 'A', 80, 80, 80, 80, 0),
+('Thermalright Peerless Assassin 120', 'Cooler', 'Thermalright', 'PA120', 'AM5', 'S', 90, 90, 90, 90, 0);
