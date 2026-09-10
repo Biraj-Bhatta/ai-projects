@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: pc-part-picker-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pcpartpicker
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # Optionally, you can map the schema initialization script:
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  scraper:
+    build: ./scraper
+    container_name: pc-part-picker-scraper
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+volumes:
+  db_data:

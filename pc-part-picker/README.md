@@ -7,70 +7,47 @@ This is a full-stack web application that generates price-optimized, compatible 
 *   **`frontend/`**: Next.js (App Router) with React and Tailwind CSS. Provides the user interface for configuring builds.
 *   **`backend/`**: Go using the Echo framework. Handles the core compatibility logic, budget allocation, and communicates with the database and scraper.
 *   **`scraper/`**: Python FastAPI microservice utilizing `crawl4ai`. Fetches live pricing data for components.
-*   **`schema.sql`** (in `backend/`): Configures the MySQL database schema.
+*   **`docker-compose.yml`**: Configures Docker for spinning up the MySQL Database and Python AI Scraper.
 
 ---
 
-## Prerequisites
+## Local Hybrid Setup (Docker + Localhost)
 
-*   Node.js (v18+) and npm
-*   Go (v1.21+)
-*   Python (3.10+)
-*   MySQL (or Docker to run the database)
+To run the MySQL Database and Python AI Scraper in Docker containers, while running the Frontend (Next.js) and Backend (Go) natively on your local machine, follow these steps:
 
----
+### 1. Start Docker Containers (Scraper + Database)
 
-## Local Development Setup
+From the `pc-part-picker` directory, run the following command to start both the MySQL database and the Python AI scraper in detached mode:
 
-### 1. Database Configuration
-
-You can run the MySQL database locally or using Docker. Assuming you have a local MySQL instance:
-
-Import the schema and seed data:
-
-mysql -h 127.0.0.1 -u root -p < backend/schema.sql
+docker-compose up -d --build
 
 
-### 2. Scraper Service (Python)
+*   **Database:** Runs on `localhost:3306`. (Credentials: User: `root`, Pass: `root`, DB: `pcpartpicker`). The schema will be automatically initialized.
+*   **Scraper:** Runs on `http://localhost:8000`.
 
-Open a new terminal and start the AI Web Scraper:
+### 2. Start the Backend Service (Go on Localhost)
 
-cd pc-part-picker/scraper
-python3 -m venv venv
-source venv/bin/activate
-pip install fastapi uvicorn crawl4ai pydantic
-python main.py &
-
-
-*The scraper will run on `http://localhost:8000`.*
-
-### 3. Backend Service (Go)
-
-Open a new terminal and start the Go API:
+Open a new terminal, navigate to the backend directory, and run the Go API locally:
 
 cd pc-part-picker/backend
-# Set database environment variables if different from defaults
-export DB_USER=root
-export DB_PASS=root
-export DB_HOST=127.0.0.1:3306
-export DB_NAME=pcpartpicker
-
 go mod tidy
 go run main.go &
 
 
-*The backend will run on `http://localhost:8080`.*
+*   The backend will run on `http://localhost:8080`.
+*   It is pre-configured to connect to the MySQL database at `127.0.0.1:3306` and the Scraper at `http://localhost:8000`.
 
-### 4. Frontend Service (Next.js)
+### 3. Start the Frontend Service (Next.js on Localhost)
 
-Open a new terminal and start the frontend UI:
+Open a new terminal, navigate to the frontend directory, install dependencies, and run the Next.js server locally:
 
 cd pc-part-picker/frontend
 npm install
 npm run dev &
 
 
-*The frontend will be accessible at `http://localhost:3000`.*
+*   The frontend will be accessible at `http://localhost:3000`.
+*   It is pre-configured to make requests to your local Go backend at `http://localhost:8080/api/build`.
 
 ---
 
@@ -89,10 +66,7 @@ For production, it is highly recommended to containerize all services and deploy
 3. Run the binary as a background service (e.g., using `systemd`).
 
 ### Scraper (Python FastAPI)
-1. Run the FastAPI application using a production ASGI server like Gunicorn with Uvicorn workers:
-
-gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000 --workers 4 &
-
+1. The `docker-compose.yml` already contains a robust configuration for the scraper, but in production, you might modify its Dockerfile to use an ASGI server like Gunicorn with Uvicorn workers.
 
 ### Database (MySQL)
 * Use a managed database service (e.g., AWS RDS, Google Cloud SQL) for better reliability and backups, or ensure your production Docker volumes are properly mounted and backed up.
