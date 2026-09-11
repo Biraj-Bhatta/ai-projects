@@ -134,7 +134,12 @@ func getComponents(c echo.Context) error {
 var fetchPriceFunc = fetchPriceFromScraper // Allows mocking in tests
 
 func fetchPriceFromScraper(componentName string, inCountry bool) (ScraperResponse, error) {
-	apiURL := fmt.Sprintf("http://localhost:8000/scrape?query=%s&in_country=%t", url.QueryEscape(componentName), inCountry)
+	scraperHost := os.Getenv("SCRAPER_HOST")
+	if scraperHost == "" {
+		scraperHost = "localhost:8000"
+	}
+
+	apiURL := fmt.Sprintf("http://%s/scrape?query=%s&in_country=%t", scraperHost, url.QueryEscape(componentName), inCountry)
 	var sResp ScraperResponse
 	resp, err := http.Get(apiURL)
 	if err != nil {

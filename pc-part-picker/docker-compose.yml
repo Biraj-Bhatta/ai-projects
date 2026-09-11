@@ -11,16 +11,42 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      # Optionally, you can map the schema initialization script:
       - ./backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   scraper:
     build: ./scraper
     container_name: pc-part-picker-scraper
     ports:
       - "8000:8000"
+
+  backend:
+    build: ./backend
+    container_name: pc-part-picker-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_USER=root
+      - DB_PASS=root
+      - DB_HOST=db:3306
+      - DB_NAME=pcpartpicker
+      - SCRAPER_HOST=scraper:8000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      scraper:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    container_name: pc-part-picker-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   db_data:

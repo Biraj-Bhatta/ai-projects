@@ -24,18 +24,25 @@ export default function Home() {
   const [lockedComponents, setLockedComponents] = useState<number[]>([]);
   const [buildResult, setBuildResult] = useState<{ build: Component[], total_cost: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // In Docker environment, client-side fetches might need to hit the host's localhost
+  // or a relative path if behind a proxy. For local development we default to localhost:8080.
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/components")
+    fetch(`${API_URL}/api/components`)
       .then((res) => res.json())
       .then((data) => setComponents(data))
-      .catch((err) => console.error(err));
-  }, []);
+      .catch((err) => console.error("Error fetching components:", err));
+  }, [API_URL]);
 
   const handleGenerateBuild = async () => {
     setLoading(true);
+    setErrorMsg(null);
+    setBuildResult(null);
     try {
-      const res = await fetch("http://localhost:8080/api/build", {
+      const res = await fetch(`${API_URL}/api/build`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,9 +59,15 @@ export default function Home() {
         }),
       });
       const data = await res.json();
-      setBuildResult(data);
+
+      if (!res.ok) {
+        setErrorMsg(data.error || "An unknown error occurred.");
+      } else {
+        setBuildResult(data);
+      }
     } catch (error) {
       console.error(error);
+      setErrorMsg("Failed to connect to the backend API.");
     }
     setLoading(false);
   };
@@ -132,7 +145,7 @@ export default function Home() {
           <div className="mb-4">
             <h3 className="font-semibold mb-2">Lock Components</h3>
             <div className="max-h-40 overflow-y-auto border p-2 rounded bg-white">
-              {components.map((comp) => (
+              {components && components.length > 0 ? components.map((comp) => (
                 <div key={comp.id} className="flex items-center mb-1">
                   <input
                     type="checkbox"
@@ -145,7 +158,7 @@ export default function Home() {
                     [{comp.type}] {comp.name}
                   </label>
                 </div>
-              ))}
+              )) : <div className="text-sm text-gray-500">Failed to load components or loading...</div>}
             </div>
           </div>
 
@@ -161,6 +174,13 @@ export default function Home() {
         {/* Results Panel */}
         <div className="bg-gray-100 p-6 rounded-lg text-black">
           <h2 className="text-xl font-semibold mb-4">Recommended Build</h2>
+
+          {errorMsg && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {errorMsg}
+            </div>
+          )}
+
           {buildResult ? (
             <div>
               <div className="space-y-4 mb-6">
@@ -192,7 +212,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="text-gray-500 italic">Configure your preferences and generate a build to see recommendations here.</div>
+            !errorMsg && <div className="text-gray-500 italic">Configure your preferences and generate a build to see recommendations here.</div>
           )}
         </div>
       </div>

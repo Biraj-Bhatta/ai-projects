@@ -7,66 +7,54 @@ This is a full-stack web application that generates price-optimized, compatible 
 *   **`frontend/`**: Next.js (App Router) with React and Tailwind CSS. Provides the user interface for configuring builds.
 *   **`backend/`**: Go using the Echo framework. Handles the core compatibility logic, budget allocation, and communicates with the database and scraper.
 *   **`scraper/`**: Python FastAPI microservice utilizing `crawl4ai`. Fetches live pricing data for components.
-*   **`docker-compose.yml`**: Configures Docker for spinning up the MySQL Database and Python AI Scraper.
+*   **`docker-compose.yml`**: Configures Docker for spinning up the complete environment (MySQL, Scraper, Backend, Frontend).
 
 ---
 
-## Local Hybrid Setup (Docker + Localhost)
+## Prerequisites
 
-To run the MySQL Database and Python AI Scraper in Docker containers, while running the Frontend (Next.js) and Backend (Go) natively on your local machine, follow these steps:
+*   Docker and Docker-Compose installed on your local machine.
 
-### 1. Start Docker Containers (Scraper + Database)
+---
 
-From the `pc-part-picker` directory, run the following command to start both the MySQL database and the Python AI scraper in detached mode:
+## Getting Started (Fully Dockerized)
 
+This project is configured to run entirely via Docker.
+
+### 1. Start the Environment
+
+From the root `pc-part-picker` directory, run the following command to start all services:
+
+```bash
 docker-compose up -d --build
+```
 
+Docker will build and spin up the following containers:
+*   **`pc-part-picker-db` (MySQL)**: Available internally on port `3306`. (Initialized automatically via `backend/schema.sql`).
+*   **`pc-part-picker-scraper` (Python)**: Available on `http://localhost:8000`.
+*   **`pc-part-picker-backend` (Go API)**: Available on `http://localhost:8080`.
+*   **`pc-part-picker-frontend` (Next.js)**: Available on `http://localhost:3000`.
 
-*   **Database:** Runs on `localhost:3306`. (Credentials: User: `root`, Pass: `root`, DB: `pcpartpicker`). The schema will be automatically initialized.
-*   **Scraper:** Runs on `http://localhost:8000`.
+### 2. Access the Application
 
-### 2. Start the Backend Service (Go on Localhost)
+Once the containers are successfully running, open your web browser and navigate to:
 
-Open a new terminal, navigate to the backend directory, and run the Go API locally:
+**http://localhost:3000**
 
-cd pc-part-picker/backend
-go mod tidy
-go run main.go &
+You can now configure your AI PC build.
 
+### 3. Stopping the Environment
 
-*   The backend will run on `http://localhost:8080`.
-*   It is pre-configured to connect to the MySQL database at `127.0.0.1:3306` and the Scraper at `http://localhost:8000`.
+To stop the running containers:
 
-### 3. Start the Frontend Service (Next.js on Localhost)
-
-Open a new terminal, navigate to the frontend directory, install dependencies, and run the Next.js server locally:
-
-cd pc-part-picker/frontend
-npm install
-npm run dev &
-
-
-*   The frontend will be accessible at `http://localhost:3000`.
-*   It is pre-configured to make requests to your local Go backend at `http://localhost:8080/api/build`.
+```bash
+docker-compose down
+```
 
 ---
 
-## Production Deployment Guide
+## Architecture Details
 
-For production, it is highly recommended to containerize all services and deploy them behind a reverse proxy (like Nginx or Traefik).
-
-### Frontend (Next.js)
-1. Build the application: `npm run build`
-2. Start the production server: `npm start`
-*Note: In production, ensure the API endpoint in the Next.js components points to your production Go API domain, not `localhost`.*
-
-### Backend (Go)
-1. Build the binary for your target OS: `GOOS=linux GOARCH=amd64 go build -o pcpartpicker-backend main.go`
-2. Set the environment variables (`DB_USER`, `DB_PASS`, `DB_HOST`, `DB_NAME`) securely on your host.
-3. Run the binary as a background service (e.g., using `systemd`).
-
-### Scraper (Python FastAPI)
-1. The `docker-compose.yml` already contains a robust configuration for the scraper, but in production, you might modify its Dockerfile to use an ASGI server like Gunicorn with Uvicorn workers.
-
-### Database (MySQL)
-* Use a managed database service (e.g., AWS RDS, Google Cloud SQL) for better reliability and backups, or ensure your production Docker volumes are properly mounted and backed up.
+*   **Database**: The MySQL container uses a volume `db_data` to persist data. Upon first creation, it automatically executes the `schema.sql` to setup tables and seed data.
+*   **Networking**: Services communicate via the default Docker bridge network. The Go backend references the database at `db:3306` and the Python scraper at `scraper:8000`.
+*   **Frontend API Config**: The Next.js frontend calls the backend API at `http://localhost:8080`. Note that in a true production environment, `localhost` calls from the client browser need to be routed through an API Gateway, Nginx, or explicitly defined via the `NEXT_PUBLIC_API_URL` environment variable.
